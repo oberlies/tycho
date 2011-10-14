@@ -19,11 +19,11 @@ import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionResult;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.project.MavenProject;
-import org.eclipse.tycho.testing.AbstractTychoMojoTestCase;
+import org.eclipse.tycho.core.test.util.AbstractLegacyTychoMojoTestBase;
 import org.eclipse.tycho.testing.CompoundRuntimeException;
 import org.junit.Assert;
 
-public class MavenDependencyCollectorTest extends AbstractTychoMojoTestCase {
+public class MavenDependencyCollectorTest extends AbstractLegacyTychoMojoTestBase {
 
     public void testNestedJars() throws Exception {
         File targetPlatform = getBasedir("targetplatforms/nestedJar");

@@ -112,7 +112,7 @@ public class OsgiManifest {
         return new OsgiManifest(stream, location);
     }
 
-    private ManifestElement[] parseHeader(String key) {
+    public ManifestElement[] parseHeader(String key) {
         String value = headers.get(key);
         if (value == null) {
             return null;

@@ -16,14 +16,12 @@ import java.util.List;
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
-import org.eclipse.tycho.ReactorProject;
+import org.eclipse.tycho.buildorder.BuildOrderParticipant;
+import org.eclipse.tycho.buildorder.internal.BuildOrderManager;
 import org.eclipse.tycho.core.osgitools.BundleReader;
 import org.eclipse.tycho.core.osgitools.DefaultBundleReader;
-import org.eclipse.tycho.core.osgitools.DefaultReactorProject;
-import org.eclipse.tycho.resolver.TychoDependencyResolver;
 
 @Component(role = AbstractMavenLifecycleParticipant.class, hint = "TychoMavenLifecycleListener")
 public class TychoMavenLifecycleParticipant extends AbstractMavenLifecycleParticipant {
@@ -31,24 +29,17 @@ public class TychoMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
     private BundleReader bundleReader;
 
     @Requirement
-    private TychoDependencyResolver resolver;
+    private List<BuildOrderParticipant> buildOrderParticipants;
 
     @Override
     public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
         if (disableLifecycleParticipation(session)) {
             return;
         }
-        configureComponents(session);
+        configureBundleReader(session);
 
-        List<MavenProject> projects = session.getProjects();
-        for (MavenProject project : projects) {
-            resolver.setupProject(session, project, DefaultReactorProject.adapt(project));
-        }
-
-        List<ReactorProject> reactorProjects = DefaultReactorProject.adapt(session);
-        for (MavenProject project : projects) {
-            resolver.resolveProject(session, project, reactorProjects);
-        }
+        BuildOrderManager buildOrderManager = new BuildOrderManager(buildOrderParticipants, session);
+        buildOrderManager.orderProjects();
     }
 
     private boolean disableLifecycleParticipation(MavenSession session) {
@@ -62,7 +53,7 @@ public class TychoMavenLifecycleParticipant extends AbstractMavenLifecyclePartic
         return false;
     }
 
-    private void configureComponents(MavenSession session) {
+    private void configureBundleReader(MavenSession session) {
         // TODO why does the bundle reader need to cache stuff in the local maven repository?
         File localRepository = new File(session.getLocalRepository().getBasedir());
         ((DefaultBundleReader) bundleReader).setLocationRepository(localRepository);

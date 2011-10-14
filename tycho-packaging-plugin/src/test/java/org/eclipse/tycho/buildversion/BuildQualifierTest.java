@@ -19,6 +19,7 @@ import org.apache.maven.execution.MavenExecutionRequest;
 import org.apache.maven.execution.MavenExecutionResult;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.tycho.core.LegacyLifecycleSupport;
 import org.eclipse.tycho.testing.AbstractTychoMojoTestCase;
 
 public class BuildQualifierTest extends AbstractTychoMojoTestCase {
@@ -176,6 +177,9 @@ public class BuildQualifierTest extends AbstractTychoMojoTestCase {
     }
 
     private BuildQualifierMojo getMojo(MavenProject project, MavenSession session) throws Exception {
+        LegacyLifecycleSupport legacyLifecycle = lookup(LegacyLifecycleSupport.class);
+        legacyLifecycle.setupProjects(session);
+
         BuildQualifierMojo mojo = (BuildQualifierMojo) lookupMojo("build-qualifier", project.getFile());
         setVariableValueToObject(mojo, "project", project);
 

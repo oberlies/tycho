@@ -84,14 +84,16 @@ public class AbstractTychoMojoTestCase extends AbstractMojoTestCase {
         MavenExecutionRequest request = newMavenExecutionRequest(pom);
         request.getProjectBuildingRequest().setProcessPlugins(false);
         request.setLocalRepository(getLocalRepository());
-        if (platform != null) {
-            request.getUserProperties().put("tycho.targetPlatform", platform.getCanonicalPath());
-        }
         MavenExecutionResult result = maven.execute(request);
         if (result.hasExceptions()) {
             throw new CompoundRuntimeException(result.getExceptions());
         }
-        return result.getTopologicallySortedProjects();
+        List<MavenProject> sortedProjects = result.getTopologicallySortedProjects();
+        if (platform != null)
+            for (MavenProject project : sortedProjects) {
+                project.getModel().getProperties().put("tycho.targetPlatform", platform.getCanonicalPath());
+            }
+        return sortedProjects;
     }
 
     protected MavenSession newMavenSession(MavenProject project, List<MavenProject> projects) throws Exception {

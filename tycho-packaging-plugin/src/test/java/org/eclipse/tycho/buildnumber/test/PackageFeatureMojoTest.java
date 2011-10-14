@@ -13,12 +13,27 @@ package org.eclipse.tycho.buildnumber.test;
 import java.io.File;
 import java.util.List;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.tycho.core.LegacyLifecycleSupport;
 import org.eclipse.tycho.model.Feature;
 import org.eclipse.tycho.packaging.PackageFeatureMojo;
 import org.eclipse.tycho.testing.AbstractTychoMojoTestCase;
 
 public class PackageFeatureMojoTest extends AbstractTychoMojoTestCase {
+
+    @Override
+    protected List<MavenProject> getSortedProjects(File basedir, File platform) throws Exception {
+        List<MavenProject> sortedProjects = super.getSortedProjects(basedir, platform);
+
+        // execute things which used to be done in afterProjectsRead
+        MavenSession session = newMavenSession(sortedProjects.get(0), sortedProjects);
+        LegacyLifecycleSupport legacyLifecycle = lookup(LegacyLifecycleSupport.class);
+        legacyLifecycle.afterProjectsRead(session);
+
+        return sortedProjects;
+    }
+
     public void testFeatureXmlGeneration() throws Exception {
         File basedir = getBasedir("projects/featureXmlGeneration");
         File platform = new File("src/test/resources/eclipse");

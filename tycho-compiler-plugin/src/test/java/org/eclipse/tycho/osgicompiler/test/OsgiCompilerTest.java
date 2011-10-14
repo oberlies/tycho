@@ -17,11 +17,13 @@ import java.util.List;
 import org.apache.bcel.classfile.ClassFormatException;
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.tycho.classpath.SourcepathEntry;
 import org.eclipse.tycho.compiler.AbstractOsgiCompilerMojo;
+import org.eclipse.tycho.core.LegacyLifecycleSupport;
 import org.eclipse.tycho.testing.AbstractTychoMojoTestCase;
 
 import copied.org.apache.maven.plugin.CompilationFailureException;
@@ -38,6 +40,18 @@ public class OsgiCompilerTest extends AbstractTychoMojoTestCase {
         super.setUp();
         storage = new File(getBasedir(), "target/storage");
         FileUtils.deleteDirectory(storage);
+    }
+
+    @Override
+    protected List<MavenProject> getSortedProjects(File basedir, File platform) throws Exception {
+        List<MavenProject> sortedProjects = super.getSortedProjects(basedir, platform);
+
+        // execute things which used to be done in afterProjectsRead
+        MavenSession session = newMavenSession(sortedProjects.get(0), sortedProjects);
+        LegacyLifecycleSupport legacyLifecycle = lookup(LegacyLifecycleSupport.class);
+        legacyLifecycle.afterProjectsRead(session);
+
+        return sortedProjects;
     }
 
     private AbstractOsgiCompilerMojo getMojo(List<MavenProject> projects, MavenProject project) throws Exception {

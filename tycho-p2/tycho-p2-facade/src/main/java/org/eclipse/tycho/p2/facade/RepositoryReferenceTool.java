@@ -81,7 +81,8 @@ public class RepositoryReferenceTool {
             repositories.addArtifactRepository(publisherResults);
         }
 
-        addRepositoriesOfReferencedModules(repositories, module);
+        // TODO add repositories of all previously built modules?
+        addRepositoriesOfTransitivelyReferencedModules(repositories, module);
 
         repositories.addArtifactRepository(RepositoryBlackboardKey.forResolutionContextArtifacts(module.getBasedir()));
 
@@ -92,27 +93,32 @@ public class RepositoryReferenceTool {
         return repositories;
     }
 
-    private static void addRepositoriesOfReferencedModules(RepositoryReferences sources, MavenProject currentProject)
+    private static void addRepositoriesOfTransitivelyReferencedModules(RepositoryReferences sources, MavenProject module)
             throws MojoExecutionException, MojoFailureException {
-        for (MavenProject referencedProject : currentProject.getProjectReferences().values()) {
-            String packaging = referencedProject.getPackaging();
-            if (ArtifactKey.TYPE_ECLIPSE_PLUGIN.equals(packaging)
-                    || ArtifactKey.TYPE_ECLIPSE_TEST_PLUGIN.equals(packaging)
-                    || ArtifactKey.TYPE_ECLIPSE_FEATURE.equals(packaging)) {
-                // check that expected repository files are there (for more descriptive problem messages)
-                File metadataXml = getAttachedArtifact(referencedProject, RepositoryLayoutHelper.CLASSIFIER_P2_METADATA);
-                File artifactXml = getAttachedArtifact(referencedProject,
-                        RepositoryLayoutHelper.CLASSIFIER_P2_ARTIFACTS);
-                File artifactLocations = new File(artifactXml.getParentFile(),
-                        RepositoryLayoutHelper.FILE_NAME_LOCAL_ARTIFACTS);
-                if (!artifactLocations.isFile()) {
-                    throw new MojoFailureException("Missing required file \"" + artifactLocations
-                            + "\" in target folder of module " + referencedProject.getId());
-                }
+        // loop over dependencies to projects within the reactor
+        for (MavenProject referencedProject : module.getProjectReferences().values()) {
+            addRepositoriesOfModule(sources, referencedProject);
+            addRepositoriesOfTransitivelyReferencedModules(sources, referencedProject);
+        }
+    }
 
-                sources.addMetadataRepository(metadataXml.getParentFile());
-                sources.addArtifactRepository(artifactXml.getParentFile());
+    private static void addRepositoriesOfModule(RepositoryReferences sources, MavenProject project)
+            throws MojoFailureException {
+        String packaging = project.getPackaging();
+        if (ArtifactKey.TYPE_ECLIPSE_PLUGIN.equals(packaging) || ArtifactKey.TYPE_ECLIPSE_TEST_PLUGIN.equals(packaging)
+                || ArtifactKey.TYPE_ECLIPSE_FEATURE.equals(packaging)) {
+            // check that expected repository files are there (for more descriptive problem messages)
+            File metadataXml = getAttachedArtifact(project, RepositoryLayoutHelper.CLASSIFIER_P2_METADATA);
+            File artifactXml = getAttachedArtifact(project, RepositoryLayoutHelper.CLASSIFIER_P2_ARTIFACTS);
+            File artifactLocations = new File(artifactXml.getParentFile(),
+                    RepositoryLayoutHelper.FILE_NAME_LOCAL_ARTIFACTS);
+            if (!artifactLocations.isFile()) {
+                throw new MojoFailureException("Missing required file \"" + artifactLocations
+                        + "\" in target folder of module " + project.getId());
             }
+
+            sources.addMetadataRepository(metadataXml.getParentFile());
+            sources.addArtifactRepository(artifactXml.getParentFile());
         }
     }
 
